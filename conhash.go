@@ -4,6 +4,12 @@ import (
 	"math"
 )
 
+// TODO define error response codes. or mayeb just make it package errors, e.g.
+//
+//   ErrorMissingBucket
+//   ErrorTooManyKeys
+//   etc
+
 const (
 	defaultCopies = 10
 	opCapacity    = 4096
@@ -63,6 +69,28 @@ func NewRouter(nodes, copies int) *Router {
 	return r
 }
 
+// TODO public-facing interface to route. returns the corresponding node through the
+// resp channel.
+func (r *Router) Route(hash int, resp chan<- int) {
+	op := &routeOp{
+		hash: hash,
+		resp: resp,
+	}
+	r.findOps <- op
+}
+
+// TODO public facing interface. responses are as follows
+// 0 is good. 1 is error. we could actually define a set of errors.
+func (r *Router) NodeUp(hash int, resp chan<- int) {
+
+}
+
+// TODO public facing interface. responses are as follows
+// 0 is good. 1 is error. we could actually define a set of errors.
+func (r *Router) NodeDown(hash int, resp chan<- int) {
+
+}
+
 // TODO continuously run; stateful goroutine. this allows us to avoid using
 // any concurrency primitives and isntead take advantage of go's biggest
 // strength: the insanely powerful concurrency primitive known as channels.
@@ -70,13 +98,28 @@ func (r *Router) Run() {
 	for {
 		select {
 		case op := <-r.routeOps:
-			if op == nil {
-				return
-			}
-			continue
+			go processRouteOp(op)
+		case op := <-r.downOps:
+			go processDownOp(op)
+		case op := <-r.upOps:
+			go processUpOp(op)
 		}
-
 	}
+}
+
+// TODO process a routeOp. dont forget to push to the resp channel.
+func processRouteOp(op *routeOp) {
+
+}
+
+// TODO process a routeOp. dont forget to push to the resp channel.
+func processDownOp(op *routeOp) {
+
+}
+
+// TODO process a routeOp. dont forget to push to the resp channel.
+func processUpOp(op *routeOp) {
+
 }
 
 // TODO find the correct range (key) given an input integer via a binary
