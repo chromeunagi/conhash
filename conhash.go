@@ -33,7 +33,7 @@ type (
 	// bitch. a negative response signifies an error.
 	routeOp struct {
 		hash int
-		resp chan int
+		resp chan<- int
 	}
 
 	downOp struct {
@@ -98,33 +98,50 @@ func (r *Router) Run() {
 	for {
 		select {
 		case op := <-r.routeOps:
-			go processRouteOp(op)
+			r.route(op)
 		case op := <-r.downOps:
-			go processDownOp(op)
+			r.down(op)
 		case op := <-r.upOps:
-			go processUpOp(op)
+			r.up(op)
 		}
 	}
 }
 
 // TODO process a routeOp. dont forget to push to the resp channel.
-func processRouteOp(op *routeOp) {
-
+func (r *Router) route(op *routeOp) {
+	op.resp <- search(op.hash).id
 }
 
 // TODO process a routeOp. dont forget to push to the resp channel.
-func processDownOp(op *routeOp) {
-
+func (r *Router) down(op *routeOp) {
+	op.resp <- -1
 }
 
 // TODO process a routeOp. dont forget to push to the resp channel.
-func processUpOp(op *routeOp) {
-
+func (r *Router) up(op *routeOp) {
+	op.resp <- -1
 }
 
-// TODO find the correct range (key) given an input integer via a binary
-// search on they keys of the array. optimization: start at an approximation
-// of the end goal. start at range stepSize * (MAX_INT / input)
-func (r *Router) findNode(hash int) *node {
-	return nil
+// Given a hash, return the node containing the range that contains the
+// hash.
+func (r *Router) search(hash int) *node {
+	var low, high, middle int
+
+	low = 0
+	high = len(r.nodes)
+
+	for low < high {
+		middle = (high - low) / 2
+		node = r.nodes[middle]
+
+		if hash < node.low {
+			high = middle
+		} else if hash >= node.high {
+			low = middle
+		} else {
+			return node
+		}
+	}
+
+	return r.nodes[low]
 }
